@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useBudget } from '../../context/BudgetContext';
 
-export const DashboardScreen: React.FC = () => {
+export const DashboardScreen: React.FC = React.memo(() => {
   const {
     monthlyBudget,
     currentDay,
@@ -14,13 +14,14 @@ export const DashboardScreen: React.FC = () => {
     setActivePocketWiseTab,
     setIsAddExpenseOpen,
     setIsAddIncomeOpen,
+    setIsDocModalOpen,
     transactions
   } = useBudget();
 
   const [isHealthDrawerOpen, setIsHealthDrawerOpen] = useState(false);
   const [dailyMode, setDailyMode] = useState<'protected' | 'gross'>('protected');
 
-  const daysLeft = cycleLength - currentDay;
+  const daysLeft = useMemo(() => cycleLength - currentDay, [cycleLength, currentDay]);
 
   return (
     <div className="flex flex-col w-full px-margin pb-space-lg gap-space-lg max-w-xl mx-auto">
@@ -520,7 +521,16 @@ export const DashboardScreen: React.FC = () => {
             <span>Add Income</span>
           </button>
         </div>
+
+        {/* Documentation Engine Instant Access */}
+        <button
+          onClick={() => setIsDocModalOpen(true)}
+          className="w-full py-2.5 px-space-md rounded-lg bg-surface-container-low hover:bg-surface-container-high text-on-surface-variant hover:text-white font-label-sm text-xs flex items-center justify-center gap-2 transition-colors border border-white/5 font-medium"
+        >
+          <span className="material-symbols-outlined text-[16px] text-primary">description</span>
+          <span>Generate Financial Health Statement & Audit Docs</span>
+        </button>
       </section>
     </div>
   );
-};
+});

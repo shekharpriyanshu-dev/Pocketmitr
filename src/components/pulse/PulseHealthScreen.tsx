@@ -1,73 +1,73 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useBudget } from '../../context/BudgetContext';
 
-export const PulseHealthScreen: React.FC = () => {
+const BASELINE_STASH = 6180;
+
+const SHOCK_SCENARIOS = [
+  {
+    id: 'dentist',
+    title: 'Medical / Dentist visit',
+    subtitle: 'Unplanned critical procedure',
+    cost: 2000,
+    burn: 110,
+    risk: 'CRITICAL HIGH',
+    riskClass: 'text-error bg-error-container',
+    deficit: '-₹480',
+    isDeficit: true,
+    advice: 'Pause Netflix & Spotify, delay weekend trek, cut takeout by 35% to avoid high-cost credit borrow.',
+    icon: 'emergency',
+    iconClass: 'text-error'
+  },
+  {
+    id: 'phone',
+    title: 'Phone screen cracked',
+    subtitle: 'Gorilla glass replacement',
+    cost: 1800,
+    burn: 121,
+    risk: 'HIGH RISK',
+    riskClass: 'text-tertiary-fixed-dim bg-tertiary-container/30',
+    deficit: '-₹280',
+    isDeficit: true,
+    advice: 'Delay new sneakers buy, utilize college campus mess meals exclusively for the next 10 days.',
+    icon: 'phonelink_erase',
+    iconClass: 'text-tertiary-fixed-dim'
+  },
+  {
+    id: 'bday',
+    title: 'Best friend surprise dinner',
+    subtitle: 'Group split + gift pool',
+    cost: 1200,
+    burn: 154,
+    risk: 'ELEVATED',
+    riskClass: 'text-secondary bg-secondary-container/40',
+    deficit: '+₹320',
+    isDeficit: false,
+    advice: 'Switch weekend trek to day-hike only. Cancel mid-week Boba tea runs to protect runway.',
+    icon: 'celebration',
+    iconClass: 'text-secondary'
+  },
+  {
+    id: 'bike',
+    title: 'Bike scooter brake repair',
+    subtitle: 'Puncture + brake cable',
+    cost: 750,
+    burn: 179,
+    risk: 'CONTROLLED',
+    riskClass: 'text-primary-fixed-dim bg-primary-container/20',
+    deficit: '+₹770',
+    isDeficit: false,
+    advice: 'Within normal absorption capacity. No major budget overhaul needed; log transaction promptly.',
+    icon: 'two_wheeler',
+    iconClass: 'text-primary-container'
+  }
+];
+
+export const PulseHealthScreen: React.FC = React.memo(() => {
   const { depositToGoal, showToast } = useBudget();
-
-  const BASELINE_STASH = 6180;
-
-  const shockScenarios = [
-    {
-      id: 'dentist',
-      title: 'Medical / Dentist visit',
-      subtitle: 'Unplanned critical procedure',
-      cost: 2000,
-      burn: 110,
-      risk: 'CRITICAL HIGH',
-      riskClass: 'text-error bg-error-container',
-      deficit: '-₹480',
-      isDeficit: true,
-      advice: 'Pause Netflix & Spotify, delay weekend trek, cut takeout by 35% to avoid high-cost credit borrow.',
-      icon: 'emergency',
-      iconClass: 'text-error'
-    },
-    {
-      id: 'phone',
-      title: 'Phone screen cracked',
-      subtitle: 'Gorilla glass replacement',
-      cost: 1800,
-      burn: 121,
-      risk: 'HIGH RISK',
-      riskClass: 'text-tertiary-fixed-dim bg-tertiary-container/30',
-      deficit: '-₹280',
-      isDeficit: true,
-      advice: 'Delay new sneakers buy, utilize college campus mess meals exclusively for the next 10 days.',
-      icon: 'phonelink_erase',
-      iconClass: 'text-tertiary-fixed-dim'
-    },
-    {
-      id: 'bday',
-      title: 'Best friend surprise dinner',
-      subtitle: 'Group split + gift pool',
-      cost: 1200,
-      burn: 154,
-      risk: 'ELEVATED',
-      riskClass: 'text-secondary bg-secondary-container/40',
-      deficit: '+₹320',
-      isDeficit: false,
-      advice: 'Switch weekend trek to day-hike only. Cancel mid-week Boba tea runs to protect runway.',
-      icon: 'celebration',
-      iconClass: 'text-secondary'
-    },
-    {
-      id: 'bike',
-      title: 'Bike scooter brake repair',
-      subtitle: 'Puncture + brake cable',
-      cost: 750,
-      burn: 179,
-      risk: 'CONTROLLED',
-      riskClass: 'text-primary-fixed-dim bg-primary-container/20',
-      deficit: '+₹770',
-      isDeficit: false,
-      advice: 'Within normal absorption capacity. No major budget overhaul needed; log transaction promptly.',
-      icon: 'two_wheeler',
-      iconClass: 'text-primary-container'
-    }
-  ];
 
   const [selectedShockId, setSelectedShockId] = useState<string | null>('dentist');
 
-  const selectedShock = shockScenarios.find((s) => s.id === selectedShockId);
+  const selectedShock = useMemo(() => SHOCK_SCENARIOS.find((s) => s.id === selectedShockId), [selectedShockId]);
   const adjustedStash = selectedShock ? BASELINE_STASH - selectedShock.cost : BASELINE_STASH;
   const currentDailyBurn = selectedShock ? selectedShock.burn : 232;
   const currentRisk = selectedShock ? selectedShock.risk : 'BASELINE TRACK';
@@ -272,7 +272,7 @@ export const PulseHealthScreen: React.FC = () => {
 
         {/* Buttons List */}
         <div className="grid grid-cols-1 gap-space-xs">
-          {shockScenarios.map((sc) => {
+          {SHOCK_SCENARIOS.map((sc) => {
             const isSelected = selectedShockId === sc.id;
             return (
               <button
@@ -464,4 +464,4 @@ export const PulseHealthScreen: React.FC = () => {
       </div>
     </div>
   );
-};
+});

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useBudget } from '../../context/BudgetContext';
 
-export const GoalsBillsScreen: React.FC = () => {
+export const GoalsBillsScreen: React.FC = React.memo(() => {
   const {
     monthlyBudget,
     setMonthlyBudget,
@@ -23,11 +23,14 @@ export const GoalsBillsScreen: React.FC = () => {
   const [cloudActive, setCloudActive] = useState(true);
   const [appliedOptimize, setAppliedOptimize] = useState(false);
 
-  const remainingDays = cycleLength - currentDay;
+  const remainingDays = useMemo(() => Math.max(1, cycleLength - currentDay), [cycleLength, currentDay]);
 
   // Saved amount from simulated cancellations
-  const savedSubsMonthly = (!spotifyActive ? 119 : 0) + (!cloudActive ? 130 : 0);
-  const dailyBoost = savedSubsMonthly > 0 ? (savedSubsMonthly / remainingDays).toFixed(1) : '0';
+  const { savedSubsMonthly, dailyBoost } = useMemo(() => {
+    const saved = (!spotifyActive ? 119 : 0) + (!cloudActive ? 130 : 0);
+    const boost = saved > 0 ? (saved / remainingDays).toFixed(1) : '0';
+    return { savedSubsMonthly: saved, dailyBoost: boost };
+  }, [spotifyActive, cloudActive, remainingDays]);
 
   const handleApplyConfig = () => {
     const b = parseInt(budgetInput, 10);
@@ -38,7 +41,7 @@ export const GoalsBillsScreen: React.FC = () => {
     showToast('Updated cycle parameters');
   };
 
-  const emergencyPct = Math.min(100, Math.round((emergencyFundTotal / 1500) * 100));
+  const emergencyPct = useMemo(() => Math.min(100, Math.round((emergencyFundTotal / 1500) * 100)), [emergencyFundTotal]);
 
   return (
     <div className="flex flex-col w-full px-margin pb-space-xl gap-space-lg max-w-xl mx-auto">
@@ -586,4 +589,4 @@ export const GoalsBillsScreen: React.FC = () => {
       </div>
     </div>
   );
-};
+});

@@ -1,71 +1,71 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useBudget } from '../../context/BudgetContext';
 
-export const ScenariosScreen: React.FC = () => {
+const SCENARIOS = {
+  A: {
+    key: 'A',
+    name: 'Scenario A',
+    title: 'Brand New Headphones',
+    spend: 2500,
+    riskLevel: 'Moderate Risk',
+    riskClass: 'text-error bg-error/15',
+    daily: '₹128',
+    monthEnd: '-₹120',
+    monthEndColor: 'text-error',
+    savings: '40%',
+    savingsLabel: 'Target delayed',
+    health: '62',
+    healthStatus: 'Needs Attention',
+    quote: '"High strain on daily student budget; leaves zero buffer for emergency meals or transit."',
+    desc: 'Locking Scenario A drops your daily allowance to ₹128/day. You will need to cut weekend expenditures to avoid deficit.',
+    delta: '-₹120 deficit',
+    deltaColor: 'text-error'
+  },
+  B: {
+    key: 'B',
+    name: 'Scenario B',
+    title: 'Budget / Refurbished',
+    spend: 1100,
+    riskLevel: 'Low Risk',
+    riskClass: 'text-primary bg-primary/15',
+    daily: '₹191',
+    monthEnd: '+₹1,280',
+    monthEndColor: 'text-primary',
+    savings: '92%',
+    savingsLabel: 'On steady track',
+    health: '78',
+    healthStatus: 'Healthy',
+    quote: '"Optimal balance: satisfies audio upgrade desire while keeping ₹2,000 savings objective intact."',
+    desc: 'Applying this path locks your daily burn limit to ₹191/day and re-forecasts your monthly savings to ₹1,280.',
+    delta: '+₹1,280 buffer',
+    deltaColor: 'text-primary'
+  },
+  C: {
+    key: 'C',
+    name: 'Scenario C',
+    title: 'Postpone to Next Month',
+    spend: 0,
+    riskLevel: 'Zero Risk',
+    riskClass: 'text-primary bg-primary/15',
+    daily: '₹241',
+    monthEnd: '+₹2,380',
+    monthEndColor: 'text-secondary',
+    savings: '100%',
+    savingsLabel: 'Surpassed',
+    health: '88',
+    healthStatus: 'Excellent',
+    quote: '"Max financial cushion; build ₹1,500 emergency reserve first before committing non-essentials."',
+    desc: 'Deferring purchase retains full ₹241/day baseline allowance and accelerates your emergency reserve past 100%.',
+    delta: '+₹2,380 surplus',
+    deltaColor: 'text-secondary'
+  }
+};
+
+export const ScenariosScreen: React.FC = React.memo(() => {
   const { showToast, addTransaction } = useBudget();
   const [selectedKey, setSelectedKey] = useState<'A' | 'B' | 'C'>('B');
 
-  const scenarios = {
-    A: {
-      key: 'A',
-      name: 'Scenario A',
-      title: 'Brand New Headphones',
-      spend: 2500,
-      riskLevel: 'Moderate Risk',
-      riskClass: 'text-error bg-error/15',
-      daily: '₹128',
-      monthEnd: '-₹120',
-      monthEndColor: 'text-error',
-      savings: '40%',
-      savingsLabel: 'Target delayed',
-      health: '62',
-      healthStatus: 'Needs Attention',
-      quote: '"High strain on daily student budget; leaves zero buffer for emergency meals or transit."',
-      desc: 'Locking Scenario A drops your daily allowance to ₹128/day. You will need to cut weekend expenditures to avoid deficit.',
-      delta: '-₹120 deficit',
-      deltaColor: 'text-error'
-    },
-    B: {
-      key: 'B',
-      name: 'Scenario B',
-      title: 'Budget / Refurbished',
-      spend: 1100,
-      riskLevel: 'Low Risk',
-      riskClass: 'text-primary bg-primary/15',
-      daily: '₹191',
-      monthEnd: '+₹1,280',
-      monthEndColor: 'text-primary',
-      savings: '92%',
-      savingsLabel: 'On steady track',
-      health: '78',
-      healthStatus: 'Healthy',
-      quote: '"Optimal balance: satisfies audio upgrade desire while keeping ₹2,000 savings objective intact."',
-      desc: 'Applying this path locks your daily burn limit to ₹191/day and re-forecasts your monthly savings to ₹1,280.',
-      delta: '+₹1,280 buffer',
-      deltaColor: 'text-primary'
-    },
-    C: {
-      key: 'C',
-      name: 'Scenario C',
-      title: 'Postpone to Next Month',
-      spend: 0,
-      riskLevel: 'Zero Risk',
-      riskClass: 'text-primary bg-primary/15',
-      daily: '₹241',
-      monthEnd: '+₹2,380',
-      monthEndColor: 'text-secondary',
-      savings: '100%',
-      savingsLabel: 'Surpassed',
-      health: '88',
-      healthStatus: 'Excellent',
-      quote: '"Max financial cushion; build ₹1,500 emergency reserve first before committing non-essentials."',
-      desc: 'Deferring purchase retains full ₹241/day baseline allowance and accelerates your emergency reserve past 100%.',
-      delta: '+₹2,380 surplus',
-      deltaColor: 'text-secondary'
-    }
-  };
-
-  const current = scenarios[selectedKey];
+  const current = useMemo(() => SCENARIOS[selectedKey], [selectedKey]);
 
   const handleCommit = () => {
     if (current.spend > 0) {
@@ -492,4 +492,4 @@ export const ScenariosScreen: React.FC = () => {
       </div>
     </div>
   );
-};
+});

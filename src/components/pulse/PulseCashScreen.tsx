@@ -1,7 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useBudget } from '../../context/BudgetContext';
 
-export const PulseCashScreen: React.FC = () => {
+const baseFoodCap = 2500;
+const baseFoodSpent = 1450;
+const baseSocialCap = 1800;
+const baseSocialSpent = 1100;
+
+export const PulseCashScreen: React.FC = React.memo(() => {
   const {
     transactions,
     setIsAddExpenseOpen,
@@ -13,16 +18,18 @@ export const PulseCashScreen: React.FC = () => {
   const [shiftVal, setShiftVal] = useState<number>(0);
   const [feedbackApplied, setFeedbackApplied] = useState(false);
 
-  const baseFoodCap = 2500;
-  const baseFoodSpent = 1450;
-  const baseSocialCap = 1800;
-  const baseSocialSpent = 1100;
-
-  const currentFoodCap = baseFoodCap + shiftVal;
-  const currentSocialCap = baseSocialCap - shiftVal;
-
-  const foodPercent = Math.min(100, Math.round((baseFoodSpent / currentFoodCap) * 100));
-  const socialPercent = Math.min(100, Math.round((baseSocialSpent / currentSocialCap) * 100));
+  const { currentFoodCap, currentSocialCap, foodPercent, socialPercent } = useMemo(() => {
+    const foodCap = baseFoodCap + shiftVal;
+    const socialCap = baseSocialCap - shiftVal;
+    const foodPct = Math.min(100, Math.round((baseFoodSpent / foodCap) * 100));
+    const socialPct = Math.min(100, Math.round((baseSocialSpent / socialCap) * 100));
+    return {
+      currentFoodCap: foodCap,
+      currentSocialCap: socialCap,
+      foodPercent: foodPct,
+      socialPercent: socialPct
+    };
+  }, [shiftVal]);
 
   const handleApplyShift = () => {
     if (shiftVal > 0) {
@@ -472,4 +479,4 @@ export const PulseCashScreen: React.FC = () => {
       </div>
     </div>
   );
-};
+});

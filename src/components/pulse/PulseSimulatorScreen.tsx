@@ -1,33 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useDeferredValue } from 'react';
 import { useBudget } from '../../context/BudgetContext';
 
-export const PulseSimulatorScreen: React.FC = () => {
+const BASE_BALANCE = 6180;
+const BASE_COMMITTED = 1650;
+const REMAINING_DAYS = 18;
+const BASE_SURPLUS = 1200;
+const BASE_SCORE = 84;
+
+export const PulseSimulatorScreen: React.FC = React.memo(() => {
   const { showToast, addTransaction, setActivePulseTab } = useBudget();
 
   const [delta, setDelta] = useState<number>(-1500);
   const [scenarioName, setScenarioName] = useState('Weekend Concert');
   const [scenarioTag, setScenarioTag] = useState('Social & Fun');
 
-  const BASE_BALANCE = 6180;
-  const BASE_COMMITTED = 1650;
-  const REMAINING_DAYS = 18;
-  const BASE_SURPLUS = 1200;
-  const BASE_SCORE = 84;
+  // Deferred delta for silky 60fps slider dragging
+  const deferredDelta = useDeferredValue(delta);
 
-  const newBalance = Math.max(0, BASE_BALANCE + delta);
-  const spendableCapital = Math.max(0, newBalance - BASE_COMMITTED);
-  const newDailyBurn = Math.max(0, Math.round(spendableCapital / REMAINING_DAYS));
-  const newSurplus = BASE_SURPLUS + delta;
+  const {
+    newBalance,
+    spendableCapital,
+    newDailyBurn,
+    newSurplus,
+    newScore,
+    isSevere,
+    isDeficit
+  } = useMemo(() => {
+    const bal = Math.max(0, BASE_BALANCE + deferredDelta);
+    const capital = Math.max(0, bal - BASE_COMMITTED);
+    const daily = Math.max(0, Math.round(capital / REMAINING_DAYS));
+    const surplus = BASE_SURPLUS + deferredDelta;
 
-  let newScore = BASE_SCORE;
-  if (delta < 0) {
-    newScore = Math.max(38, Math.round(BASE_SCORE - (Math.abs(delta) / 3000) * 32));
-  } else {
-    newScore = Math.min(96, Math.round(BASE_SCORE + (delta / 1500) * 10));
-  }
+    let score = BASE_SCORE;
+    if (deferredDelta < 0) {
+      score = Math.max(38, Math.round(BASE_SCORE - (Math.abs(deferredDelta) / 3000) * 32));
+    } else {
+      score = Math.min(96, Math.round(BASE_SCORE + (deferredDelta / 1500) * 10));
+    }
 
-  const isSevere = delta <= -2000;
-  const isDeficit = newSurplus < 0;
+    return {
+      newBalance: bal,
+      spendableCapital: capital,
+      newDailyBurn: daily,
+      newSurplus: surplus,
+      newScore: score,
+      isSevere: deferredDelta <= -2000,
+      isDeficit: surplus < 0
+    };
+  }, [deferredDelta]);
 
   const selectScenario = (name: string, tag: string, val: number) => {
     setScenarioName(name);
@@ -707,4 +727,4 @@ export const PulseSimulatorScreen: React.FC = () => {
       </section>
     </div>
   );
-};
+});

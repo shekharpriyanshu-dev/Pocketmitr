@@ -1,7 +1,7 @@
 import React from 'react';
 import { useBudget } from '../context/BudgetContext';
 
-export const Header: React.FC = () => {
+export const Header: React.FC = React.memo(() => {
   const {
     theme,
     setTheme,
@@ -11,7 +11,9 @@ export const Header: React.FC = () => {
     activePocketWiseTab,
     setActivePocketWiseTab,
     activePulseTab,
-    setActivePulseTab
+    setActivePulseTab,
+    setIsDocModalOpen,
+    showToast
   } = useBudget();
 
   const pocketWiseLogoUrl =
@@ -25,8 +27,6 @@ export const Header: React.FC = () => {
 
   const profileAvatarPulse =
     'https://lh3.googleusercontent.com/aida-public/AB6AXuB4KKV7MddVJmtDINVmlh8iErBQ5CITR-8bq3vJwiaqR3bmfpIC3wDXICjrzgVKJpLQq4xtqlLpG1FpDkBxMgWde11DOwroykZS020Ylw14_DluO0s8RqFNnYfTkKkfy5D49j7R5J8-TWy4rfk-ng-im1eHo4RQPjlO1oK7TpTqGLMbmQMuqlyXkAg8HqcsziIOahP2jRIqsffo_unmYDSoA1aYf4qpWHWNuEbTn4CLhcj7CuwNKHy4';
-
-  const daysLeft = cycleLength - currentDay;
 
   return (
     <header className="fixed top-0 inset-x-0 z-50 bg-surface-container-lowest/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.3)] transition-colors duration-300">
@@ -119,6 +119,17 @@ export const Header: React.FC = () => {
 
         {/* Right Action Icons */}
         <div className="flex items-center gap-2">
+          {/* Documentation & Audit Engine Trigger Button */}
+          <button
+            onClick={() => setIsDocModalOpen(true)}
+            aria-label="Documentation and Financial Audit"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high border border-white/10 text-xs font-semibold text-primary transition-all active:scale-95"
+            title="Open Documentation & Financial Audit Engine"
+          >
+            <span className="material-symbols-outlined text-[17px]">description</span>
+            <span className="hidden sm:inline">Docs & Audit</span>
+          </button>
+
           {theme === 'pulse' && (
             <>
               <div className="hidden xs:flex items-center gap-1.5 px-space-sm py-1 rounded-full bg-surface-container-high/90 text-primary shadow-[0_0_12px_rgba(0,245,155,0.15)]">
@@ -129,12 +140,12 @@ export const Header: React.FC = () => {
               </div>
               <button
                 aria-label="Notifications"
-                className="relative w-10 h-10 flex items-center justify-center rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-primary transition-colors"
+                className="relative w-9 h-9 flex items-center justify-center rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-primary transition-colors"
                 type="button"
-                onClick={() => alert('No new alerts. Your daily safe burn rate is protected at ₹222/day.')}
+                onClick={() => showToast('Daily safe burn rate is protected at ₹241/day.')}
               >
-                <span className="material-symbols-outlined text-[20px]">notifications</span>
-                <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-primary-container shadow-[0_0_8px_#00f59b]"></span>
+                <span className="material-symbols-outlined text-[18px]">notifications</span>
+                <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary-container shadow-[0_0_8px_#00f59b]"></span>
               </button>
             </>
           )}
@@ -168,4 +179,4 @@ export const Header: React.FC = () => {
       </div>
     </header>
   );
-};
+});

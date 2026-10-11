@@ -2,7 +2,21 @@ import React from 'react';
 import { useBudget } from '../context/BudgetContext';
 import { PocketWiseTab, PulseTab } from '../types';
 
-export const BottomNav: React.FC = () => {
+const POCKETWISE_TABS: { id: PocketWiseTab; label: string; icon: string }[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+  { id: 'simulator', label: 'Simulator', icon: 'tune' },
+  { id: 'scenarios', label: 'Scenarios', icon: 'compare_arrows' },
+  { id: 'goals-and-bills', label: 'Goals & Bills', icon: 'savings' }
+];
+
+const PULSE_TABS: { id: PulseTab; label: string; icon: string }[] = [
+  { id: 'simulator', label: 'Simulator', icon: 'equalizer' },
+  { id: 'cash', label: 'Cash', icon: 'account_balance_wallet' },
+  { id: 'subs', label: 'Subs', icon: 'event_repeat' },
+  { id: 'health', label: 'Health', icon: 'ecg_heart' }
+];
+
+export const BottomNav: React.FC = React.memo(() => {
   const {
     theme,
     activePocketWiseTab,
@@ -12,17 +26,10 @@ export const BottomNav: React.FC = () => {
   } = useBudget();
 
   if (theme === 'pocketwise') {
-    const tabs: { id: PocketWiseTab; label: string; icon: string }[] = [
-      { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
-      { id: 'simulator', label: 'Simulator', icon: 'tune' },
-      { id: 'scenarios', label: 'Scenarios', icon: 'compare_arrows' },
-      { id: 'goals-and-bills', label: 'Goals & Bills', icon: 'savings' }
-    ];
-
     return (
       <nav className="fixed bottom-0 inset-x-0 z-50 pb-safe bg-surface-container-lowest/85 backdrop-blur-xl shadow-[0_-1px_12px_rgba(0,0,0,0.3)] border-t border-white/5">
         <div className="flex justify-around items-center h-16 px-space-xs max-w-xl mx-auto">
-          {tabs.map((tab) => {
+          {POCKETWISE_TABS.map((tab) => {
             const isActive = activePocketWiseTab === tab.id;
             return (
               <button
@@ -43,18 +50,10 @@ export const BottomNav: React.FC = () => {
     );
   }
 
-  // Pulse Bottom Nav
-  const pulseTabs: { id: PulseTab; label: string; icon: string }[] = [
-    { id: 'simulator', label: 'Simulator', icon: 'equalizer' },
-    { id: 'cash', label: 'Cash', icon: 'account_balance_wallet' },
-    { id: 'subs', label: 'Subs', icon: 'event_repeat' },
-    { id: 'health', label: 'Health', icon: 'ecg_heart' }
-  ];
-
   return (
     <nav className="fixed bottom-0 inset-x-0 z-50 pb-safe bg-surface-container-lowest/80 backdrop-blur-2xl shadow-[0_-8px_32px_rgba(0,0,0,0.6)] border-t border-white/5">
       <div className="flex items-center justify-around h-20 px-space-xs max-w-xl mx-auto">
-        {pulseTabs.map((tab) => {
+        {PULSE_TABS.map((tab) => {
           const isActive = activePulseTab === tab.id;
           return (
             <button
@@ -86,4 +85,4 @@ export const BottomNav: React.FC = () => {
       </div>
     </nav>
   );
-};
+});

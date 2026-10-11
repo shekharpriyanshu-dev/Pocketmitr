@@ -1,7 +1,7 @@
 import React from 'react';
 import { useBudget } from '../../context/BudgetContext';
 
-export const PulseSubsScreen: React.FC = () => {
+export const PulseSubsScreen: React.FC = React.memo(() => {
   const {
     subscriptions,
     toggleSubscription,
@@ -335,4 +335,4 @@ export const PulseSubsScreen: React.FC = () => {
       </div>
     </div>
   );
-};
+});

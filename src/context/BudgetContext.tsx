@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { AppTheme, PocketWiseTab, PulseTab, Transaction, SubscriptionItem, GoalItem, BudgetBucket } from '../types';
 
 interface BudgetContextType {
@@ -57,6 +57,8 @@ interface BudgetContextType {
   setIsAddExpenseOpen: (open: boolean) => void;
   isAddIncomeOpen: boolean;
   setIsAddIncomeOpen: (open: boolean) => void;
+  isDocModalOpen: boolean;
+  setIsDocModalOpen: (open: boolean) => void;
 }
 
 const BudgetContext = createContext<BudgetContextType | undefined>(undefined);
@@ -76,14 +78,15 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isAddIncomeOpen, setIsAddIncomeOpen] = useState(false);
+  const [isDocModalOpen, setIsDocModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const showToast = (msg: string) => {
+  const showToast = useCallback((msg: string) => {
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage((prev) => (prev === msg ? null : prev));
     }, 2500);
-  };
+  }, []);
 
   const [subscriptions, setSubscriptions] = useState<SubscriptionItem[]>([
     {
@@ -160,7 +163,7 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   ]);
 
-  const toggleSubscription = (id: string) => {
+  const toggleSubscription = useCallback((id: string) => {
     setSubscriptions((prev) =>
       prev.map((sub) => {
         if (sub.id === id && !sub.isFixed) {
@@ -171,15 +174,19 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return sub;
       })
     );
-  };
+  }, [showToast]);
 
-  const culledMonthlyTotal = subscriptions
-    .filter((s) => !s.isActive && !s.isFixed)
-    .reduce((acc, s) => acc + s.cost, 0);
+  const culledMonthlyTotal = useMemo(() => {
+    return subscriptions
+      .filter((s) => !s.isActive && !s.isFixed)
+      .reduce((acc, s) => acc + s.cost, 0);
+  }, [subscriptions]);
 
-  const culledDailyBoost = subscriptions
-    .filter((s) => !s.isActive && !s.isFixed)
-    .reduce((acc, s) => acc + s.dailyEquivalent, 0);
+  const culledDailyBoost = useMemo(() => {
+    return subscriptions
+      .filter((s) => !s.isActive && !s.isFixed)
+      .reduce((acc, s) => acc + s.dailyEquivalent, 0);
+  }, [subscriptions]);
 
   const [transactions, setTransactions] = useState<Transaction[]>([
     {
@@ -244,12 +251,12 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   ]);
 
-  const addTransaction = (newTx: Omit<Transaction, 'id'>) => {
+  const addTransaction = useCallback((newTx: Omit<Transaction, 'id'>) => {
     const id = 'tx-' + Date.now();
     const created: Transaction = { ...newTx, id };
     setTransactions((prev) => [created, ...prev]);
     showToast(created.amount < 0 || created.category === 'Income' ? `Added Income: ₹${Math.abs(created.amount)}` : `Logged Spend: ₹${created.amount}`);
-  };
+  }, [showToast]);
 
   const [budgetBuckets, setBudgetBuckets] = useState<BudgetBucket[]>([
     {
@@ -304,7 +311,7 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   ]);
 
-  const rebalanceBuckets = (fromId: string, toId: string, amount: number) => {
+  const rebalanceBuckets = useCallback((fromId: string, toId: string, amount: number) => {
     setBudgetBuckets((prev) =>
       prev.map((b) => {
         if (b.id === fromId) return { ...b, cap: Math.max(b.spent, b.cap - amount) };
@@ -313,9 +320,9 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       })
     );
     showToast(`Rebalanced ₹${amount} between categories!`);
-  };
+  }, [showToast]);
 
-  const depositToGoal = (goalId: string, amount: number) => {
+  const depositToGoal = useCallback((goalId: string, amount: number) => {
     if (goalId === 'goal-emergency') {
       setEmergencyFundTotal((prev) => prev + amount);
       showToast(`Deposited ₹${amount} into Emergency Fund!`);
@@ -326,9 +333,9 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setGoaGoalTotal((prev) => prev + amount);
       showToast(`Deposited ₹${amount} into Goa Trip Vault!`);
     }
-  };
+  }, [showToast]);
 
-  const goals: GoalItem[] = [
+  const goals = useMemo<GoalItem[]>(() => [
     {
       id: 'goal-emergency',
       title: 'Emergency Fund',
@@ -355,23 +362,32 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       subtitle: 'Auto-deposits ₹70/day every midnight',
       icon: 'flight_takeoff'
     }
-  ];
+  ], [emergencyFundTotal, semesterGoalTotal, goaGoalTotal]);
 
-  // Derived Values
+  // Derived Values - Memoized to prevent blocking and unnecessary calculations
   const spentTotal = 1480; // Baseline recorded expenditure
   const reservedBillsTotal = 1200; // Mandatory auto-deductions
   const targetSavingsTotal = 2000;
 
-  // Available to spend (from 10k pool)
-  const remainingDays = Math.max(1, cycleLength - currentDay);
-  const availableToSpend = monthlyBudget - spentTotal - reservedBillsTotal; // ~ ₹7,320
-  const uncommittedSpendable = Math.max(0, availableToSpend - emergencyFundTotal); // ₹5,320
+  const { availableToSpend, dailySafeSpendProtected, dailySafeSpendGross, healthScore, surplusForecast } = useMemo(() => {
+    const remainingDays = Math.max(1, cycleLength - currentDay);
+    const available = monthlyBudget - spentTotal - reservedBillsTotal; // ~ ₹7,320
+    const uncommitted = Math.max(0, available - emergencyFundTotal); // ₹5,320
 
-  const dailySafeSpendProtected = Math.round(uncommittedSpendable / remainingDays) + culledDailyBoost; // ₹241
-  const dailySafeSpendGross = Math.round(availableToSpend / remainingDays) + culledDailyBoost; // ₹332
+    const protectedDaily = Math.round(uncommitted / remainingDays) + culledDailyBoost; // ₹241
+    const grossDaily = Math.round(available / remainingDays) + culledDailyBoost; // ₹332
 
-  const healthScore = Math.min(98, 84 + (culledMonthlyTotal > 0 ? 4 : 0));
-  const surplusForecast = 2380 + culledMonthlyTotal;
+    const score = Math.min(98, 84 + (culledMonthlyTotal > 0 ? 4 : 0));
+    const surplus = 2380 + culledMonthlyTotal;
+
+    return {
+      availableToSpend: available,
+      dailySafeSpendProtected: protectedDaily,
+      dailySafeSpendGross: grossDaily,
+      healthScore: score,
+      surplusForecast: surplus
+    };
+  }, [monthlyBudget, cycleLength, currentDay, emergencyFundTotal, culledDailyBoost, culledMonthlyTotal]);
 
   // Update theme class on HTML element
   useEffect(() => {
@@ -383,48 +399,81 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [theme]);
 
+  const contextValue = useMemo<BudgetContextType>(() => ({
+    theme,
+    setTheme,
+    activePocketWiseTab,
+    setActivePocketWiseTab,
+    activePulseTab,
+    setActivePulseTab,
+    monthlyBudget,
+    setMonthlyBudget,
+    cycleLength,
+    setCycleLength,
+    currentDay,
+    setCurrentDay,
+    spentTotal,
+    reservedBillsTotal,
+    emergencyFundTotal,
+    targetSavingsTotal,
+    availableToSpend,
+    dailySafeSpendProtected,
+    dailySafeSpendGross,
+    healthScore,
+    surplusForecast,
+    subscriptions,
+    toggleSubscription,
+    culledMonthlyTotal,
+    culledDailyBoost,
+    goals,
+    depositToGoal,
+    transactions,
+    addTransaction,
+    budgetBuckets,
+    rebalanceBuckets,
+    toastMessage,
+    showToast,
+    isAddExpenseOpen,
+    setIsAddExpenseOpen,
+    isAddIncomeOpen,
+    setIsAddIncomeOpen,
+    isDocModalOpen,
+    setIsDocModalOpen
+  }), [
+    theme,
+    activePocketWiseTab,
+    activePulseTab,
+    monthlyBudget,
+    cycleLength,
+    currentDay,
+    spentTotal,
+    reservedBillsTotal,
+    emergencyFundTotal,
+    targetSavingsTotal,
+    availableToSpend,
+    dailySafeSpendProtected,
+    dailySafeSpendGross,
+    healthScore,
+    surplusForecast,
+    subscriptions,
+    toggleSubscription,
+    culledMonthlyTotal,
+    culledDailyBoost,
+    goals,
+    depositToGoal,
+    transactions,
+    addTransaction,
+    budgetBuckets,
+    rebalanceBuckets,
+    toastMessage,
+    showToast,
+    isAddExpenseOpen,
+    isAddIncomeOpen,
+    isDocModalOpen
+  ]);
+
   return (
-    <BudgetContext.Provider
-      value={{
-        theme,
-        setTheme,
-        activePocketWiseTab,
-        setActivePocketWiseTab,
-        activePulseTab,
-        setActivePulseTab,
-        monthlyBudget,
-        setMonthlyBudget,
-        cycleLength,
-        setCycleLength,
-        currentDay,
-        setCurrentDay,
-        spentTotal,
-        reservedBillsTotal,
-        emergencyFundTotal,
-        targetSavingsTotal,
-        availableToSpend,
-        dailySafeSpendProtected,
-        dailySafeSpendGross,
-        healthScore,
-        surplusForecast,
-        subscriptions,
-        toggleSubscription,
-        culledMonthlyTotal,
-        culledDailyBoost,
-        goals,
-        depositToGoal,
-        transactions,
-        addTransaction,
-        budgetBuckets,
-        rebalanceBuckets,
-        toastMessage,
-        showToast,
-        isAddExpenseOpen,
-        setIsAddExpenseOpen,
-        isAddIncomeOpen,
-        setIsAddIncomeOpen
-      }}
-    >
+    <BudgetContext.Provider value={contextValue}>
       {children}
     </BudgetContext.Provider>
   );

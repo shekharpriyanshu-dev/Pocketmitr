@@ -1,7 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useDeferredValue } from 'react';
 import { useBudget } from '../../context/BudgetContext';
 
-export const SimulatorScreen: React.FC = () => {
+const CATEGORIES = [
+  { id: 'product', icon: '🎧', label: 'Buy Product' },
+  { id: 'dining', icon: '🍔', label: 'Dining Out' },
+  { id: 'event', icon: '🎟️', label: 'Event / Trip' },
+  { id: 'course', icon: '💻', label: 'Course' },
+  { id: 'subscription', icon: '🔄', label: 'Subscription' },
+  { id: 'emergency', icon: '🚑', label: 'Emergency' }
+];
+
+const PRESETS = [
+  { label: '+₹500', value: 500 },
+  { label: '₹1,000', value: 1000 },
+  { label: '₹2,500', value: 2500 },
+  { label: '₹4,000', value: 4000 }
+];
+
+export const SimulatorScreen: React.FC = React.memo(() => {
   const {
     availableToSpend,
     dailySafeSpendProtected,
@@ -17,34 +33,39 @@ export const SimulatorScreen: React.FC = () => {
   const [proposedAmount, setProposedAmount] = useState<number>(2500);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const categories = [
-    { id: 'product', icon: '🎧', label: 'Buy Product' },
-    { id: 'dining', icon: '🍔', label: 'Dining Out' },
-    { id: 'event', icon: '🎟️', label: 'Event / Trip' },
-    { id: 'course', icon: '💻', label: 'Course' },
-    { id: 'subscription', icon: '🔄', label: 'Subscription' },
-    { id: 'emergency', icon: '🚑', label: 'Emergency' }
-  ];
-
-  const presets = [
-    { label: '+₹500', value: 500 },
-    { label: '₹1,000', value: 1000 },
-    { label: '₹2,500', value: 2500 },
-    { label: '₹4,000', value: 4000 }
-  ];
-
-  // Dynamic calculations
+  // Deferred value for smooth, non-blocking 60fps slider dragging
+  const deferredAmount = useDeferredValue(proposedAmount);
   const remainingDays = 22;
-  const simulatedBalance = Math.max(0, availableToSpend - proposedAmount);
-  const uncommittedSpendable = Math.max(0, simulatedBalance - 1500);
-  const simulatedDaily = Math.max(0, Math.round(uncommittedSpendable / remainingDays));
-  const dropPct = Math.round(((dailySafeSpendProtected - simulatedDaily) / dailySafeSpendProtected) * 100);
 
-  const simulatedSurplus = baselineSurplus - proposedAmount;
-  const isDeficit = simulatedSurplus < 0;
+  // Dynamic calculations memoized against deferred value
+  const {
+    simulatedBalance,
+    simulatedDaily,
+    dropPct,
+    simulatedSurplus,
+    isDeficit,
+    simulatedHealth
+  } = useMemo(() => {
+    const balance = Math.max(0, availableToSpend - deferredAmount);
+    const uncommittedSpendable = Math.max(0, balance - 1500);
+    const daily = Math.max(0, Math.round(uncommittedSpendable / remainingDays));
+    const drop = Math.round(((dailySafeSpendProtected - daily) / dailySafeSpendProtected) * 100);
 
-  const healthPenalty = Math.round((proposedAmount / 6000) * 35);
-  const simulatedHealth = Math.max(30, baselineHealth - healthPenalty);
+    const surplus = baselineSurplus - deferredAmount;
+    const deficit = surplus < 0;
+
+    const healthPenalty = Math.round((deferredAmount / 6000) * 35);
+    const health = Math.max(30, baselineHealth - healthPenalty);
+
+    return {
+      simulatedBalance: balance,
+      simulatedDaily: daily,
+      dropPct: drop,
+      simulatedSurplus: surplus,
+      isDeficit: deficit,
+      simulatedHealth: health
+    };
+  }, [availableToSpend, dailySafeSpendProtected, baselineSurplus, baselineHealth, deferredAmount]);
 
   const handleAuthorize = () => {
     addTransaction({
@@ -103,7 +124,7 @@ export const SimulatorScreen: React.FC = () => {
 
         {/* Category Chips (Horizontal Scrollable) */}
         <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar -mx-1 px-1">
-          {categories.map((cat) => {
+          {CATEGORIES.map((cat) => {
             const isSelected = selectedCategory === cat.id;
             return (
               <button
@@ -173,7 +194,7 @@ export const SimulatorScreen: React.FC = () => {
 
           {/* Quick Preset Increment Chips */}
           <div className="grid grid-cols-4 gap-2 pt-1">
-            {presets.map((p) => {
+            {PRESETS.map((p) => {
               const isActive = proposedAmount === p.value;
               return (
                 <button
@@ -504,4 +525,4 @@ export const SimulatorScreen: React.FC = () => {
       )}
     </div>
   );
-};
+});
