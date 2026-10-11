@@ -1,0 +1,6 @@
+{
+  "name": "PocketWise & Pulse - Gen Z Micro-Budget & Decision Simulator",
+  "description": "Ultra-sleek Gen Z financial engine and decision sandbox. Stress-test purchases, simulate what-if scenarios, dynamic daily safe burn calculations, and recurring subscription cull simulator.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
